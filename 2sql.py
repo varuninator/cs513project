@@ -7,35 +7,28 @@ menu_columns = ['id', 'name', 'sponsor', 'event', 'venue', 'place', 'physical_de
 menuitem_columns = ['id', 'menu_page_id', 'price', 'high_price', 'dish_id', 'created_at', 'updated_at', 'xpos', 'ypos']
 menupage_columns = ['id', 'menu_id', 'page_number', 'image_id', 'full_height', 'full_width', 'uuid']
 
-def create_db():
+def csv2db():
+
     conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
     
-    # Directory containing the CSV files
-    csv_directory = 'NYPL-menus'
-    
-    # Iterate over each CSV file in the directory
+    csv_directory = 'NYPL-menus'    
     for filename in os.listdir(csv_directory):
         if filename.endswith('.csv'):
-            # Read the CSV file into a DataFrame
             csv_path = os.path.join(csv_directory, filename)
             df = pd.read_csv(csv_path)
             
-            # Create a table name based on the CSV file name (without extension)
-            table_name = os.path.splitext(filename)[0]
-            
-            # Write the DataFrame to the SQLite database
+            table_name = os.path.splitext(filename)[0]            
             df.to_sql(table_name, conn, if_exists='replace', index=False)
     
     conn.close()
 
 def usecase_query():
+
     conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
     
     # Menus that contain all top 5 dishes by menus_appeared in Dish table
     query = """
-    SELECT m.*
+    SELECT DISTINCT m.*
     FROM Menu m
     JOIN MenuPage mp ON m.id = mp.menu_id
     JOIN MenuItem mi ON mp.id = mi.menu_page_id
@@ -50,6 +43,7 @@ def usecase_query():
     HAVING COUNT(DISTINCT d.id) = 5;
     """
     result_df = pd.read_sql_query(query, conn)
+    result_df.columns = menu_columns
     conn.close()
     return result_df
 
